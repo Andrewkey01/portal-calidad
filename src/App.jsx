@@ -31,7 +31,7 @@ function App() {
   const finalizarRegistro = async (e) => {
     e.preventDefault()
     
-    // 1. Registro en Supabase Auth
+    // 1. Registro en Supabase Auth (Aquí se guarda el password de forma segura)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: form.correo,
       password: form.password,
@@ -42,20 +42,23 @@ function App() {
       return
     }
 
-    // 2. Actualizar tabla de asesores
+    // 2. Actualizar tabla de asesores (Cambiado 'correo' por 'email')
+    // No enviamos el password aquí porque ya lo borramos de la tabla en Supabase
     const { error: dbError } = await supabase
       .from('lista_asesores')
-      .update({ registrado: true, correo: form.correo })
+      .update({ 
+        registrado: true, 
+        email: form.correo 
+      })
       .eq('id', seleccionado.id)
     
     if (!dbError) {
-      // VENTANA DE CONFIRMACIÓN MEJORADA
-      alert(`✅ ¡USUARIO REGISTRADO!\n\n${seleccionado.nombre}, tu cuenta ha sido creada con éxito. Ya puedes iniciar sesión.`);
+      alert(`✅ ¡USUARIO REGISTRADO!\n\n${seleccionado.nombre}, tu cuenta ha sido creada con éxito. Revisa tu correo para confirmar (si es necesario) y ya puedes iniciar sesión.`);
       
-      // Limpiar y volver al login
       setSeleccionado(null)
       setPaso('login')
     } else {
+      // Si sale error aquí, es probable que la columna en Supabase no se llame 'email'
       alert("Error al vincular: " + dbError.message)
     }
   }
