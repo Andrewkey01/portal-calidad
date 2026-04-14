@@ -25,11 +25,13 @@ function App() {
       password: form.password,
     })
     if (error) alert("Error: " + error.message)
-    else alert("¡Bienvenido!")
+    else alert("¡Bienvenido al Portal!")
   }
 
   const finalizarRegistro = async (e) => {
     e.preventDefault()
+    
+    // 1. Registro en Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: form.correo,
       password: form.password,
@@ -40,14 +42,21 @@ function App() {
       return
     }
 
+    // 2. Actualizar tabla de asesores
     const { error: dbError } = await supabase
       .from('lista_asesores')
       .update({ registrado: true, correo: form.correo })
       .eq('id', seleccionado.id)
     
     if (!dbError) {
-      alert(`¡Registro exitoso para ${seleccionado.nombre}!`);
+      // VENTANA DE CONFIRMACIÓN MEJORADA
+      alert(`✅ ¡USUARIO REGISTRADO!\n\n${seleccionado.nombre}, tu cuenta ha sido creada con éxito. Ya puedes iniciar sesión.`);
+      
+      // Limpiar y volver al login
+      setSeleccionado(null)
       setPaso('login')
+    } else {
+      alert("Error al vincular: " + dbError.message)
     }
   }
 
@@ -61,31 +70,35 @@ function App() {
         <div className="login-card">
           {paso === 'login' ? (
             <form onSubmit={handleLogin}>
-              <h2>Portal Calidad</h2>
+              <h2 style={{marginBottom: '30px'}}>Portal Calidad</h2>
               <input type="email" placeholder="Correo" className="input-field" required onChange={(e) => setForm({...form, correo: e.target.value})} />
               <input type="password" placeholder="Contraseña" className="input-field" required onChange={(e) => setForm({...form, password: e.target.value})} />
               <button type="submit" className="btn-verde">Ingresar</button>
-              <p style={{marginTop: '20px', fontSize: '13px'}}>
-                <span style={{color: '#00B178', cursor: 'pointer'}} onClick={() => setPaso('registro')}>¿ES TU PRIMERA VEZ? REGÍSTRATE</span>
+              <p style={{marginTop: '25px', fontSize: '13px'}}>
+                <span style={{color: '#00B178', cursor: 'pointer', fontWeight: 'bold'}} onClick={() => setPaso('registro')}>
+                  ¿ES TU PRIMERA VEZ? REGÍSTRATE
+                </span>
               </p>
             </form>
           ) : (
             <div>
-              <h2>Registro</h2>
+              <h2 style={{marginBottom: '20px'}}>Registro</h2>
               {!seleccionado ? (
                 <>
+                  <p style={{color: '#aaa', fontSize: '14px', marginBottom: '15px'}}>Selecciona tu nombre de la lista:</p>
                   <select onChange={(e) => setSeleccionado(asesores.find(a => a.id == e.target.value))} className="login-select">
-                    <option value="">Selecciona tu nombre...</option>
+                    <option value="">Buscar mi nombre...</option>
                     {asesores.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
                   </select>
-                  <button onClick={() => setPaso('login')} style={{background: 'none', border: 'none', color: '#888', cursor: 'pointer'}}>Volver</button>
+                  <button onClick={() => setPaso('login')} style={{background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginTop: '10px'}}>← Volver al inicio</button>
                 </>
               ) : (
                 <form onSubmit={finalizarRegistro}>
-                  <p>Hola, <b>{seleccionado.nombre}</b></p>
-                  <input type="email" placeholder="Tu correo" className="input-field" required onChange={(e) => setForm({...form, correo: e.target.value})} />
-                  <input type="password" placeholder="Crea contraseña" className="input-field" required onChange={(e) => setForm({...form, password: e.target.value})} />
+                  <p style={{marginBottom: '20px'}}>Bienvenido, <b style={{color: '#00B178'}}>{seleccionado.nombre}</b></p>
+                  <input type="email" placeholder="Ingresa un correo personal" className="input-field" required onChange={(e) => setForm({...form, correo: e.target.value})} />
+                  <input type="password" placeholder="Crea tu contraseña" className="input-field" required onChange={(e) => setForm({...form, password: e.target.value})} />
                   <button type="submit" className="btn-verde">Finalizar Registro</button>
+                  <button onClick={() => setSeleccionado(null)} style={{background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginTop: '15px', display: 'block', width: '100%'}}>Elegir otro nombre</button>
                 </form>
               )}
             </div>
